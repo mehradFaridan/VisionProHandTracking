@@ -13,10 +13,18 @@ import ARKit
 struct ImmersiveView: View {
     let handTracking = HandTrackingProvider()
     let session = ARKitSession()
+    @State var box = ModelEntity()
+    @State var sphere = ModelEntity()
 
     var body: some View {
         RealityView { content in
             // Add the initial RealityKit content
+            let material = SimpleMaterial(color: .red, isMetallic: false)
+            self.sphere = ModelEntity(mesh: .generateSphere(radius: 0.05), materials: [material])
+            self.box = ModelEntity(mesh: .generateBox(size: 0.05), materials: [material])
+
+            content.add(box)
+            content.add(sphere)
 
         } update: { content in
 
@@ -30,14 +38,29 @@ struct ImmersiveView: View {
                     switch anchor.chirality {
                     case .left:
                         // left hand code goes here
-                        print("Left hand is tracked")
-                        break
+//                        print("Left hand is tracked")
+                        if let handSkeleton = anchor.handSkeleton {
+                            let palm = handSkeleton.joint(.middleFingerKnuckle)
+                            // get pos of palm relative to origin
+                            let originFromWrist = anchor.originFromAnchorTransform
+                            let wristFromPalm = palm.anchorFromJointTransform
+                            let originFromTip = originFromWrist * wristFromPalm
+                            sphere.setTransformMatrix(originFromTip, relativeTo: nil)
+                        }
 
                     case .right:
                         // right hand code goes here
-                        print("Right hand is tracked")
-                        break
-                        
+//                        print("Right hand is tracked")
+
+                        if let handSkeleton = anchor.handSkeleton {
+                            let palm = handSkeleton.joint(.middleFingerKnuckle)
+                            // get pos of palm relative to origin
+                            let originFromWrist = anchor.originFromAnchorTransform
+                            let wristFromPalm = palm.anchorFromJointTransform
+                            let originFromTip = originFromWrist * wristFromPalm
+                            box.setTransformMatrix(originFromTip, relativeTo: nil)
+                        }
+
                     @unknown default:
                         print("Unknown error")
                     }
